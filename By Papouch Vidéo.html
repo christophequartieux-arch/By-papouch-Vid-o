@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>By Papouch Vidéo — Une image, des vidéos</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+        --bg:#0a0a0a; --panel:#151515; --panel-2:#1a1a1a; --border:#2a2a2a;
+        --accent:#c4b5fd; --accent-dark:#a78bfa; --text:#e0e0e0; --text-dim:#888;
+        --success:#4ade80; --error:#f87171; --warn:#facc15;
+    }
+    body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+        background:var(--bg); color:var(--text); min-height:100vh; display:flex;
+        flex-direction:column; align-items:center; padding:2rem 1rem; }
+    .container { max-width:1200px; width:100%; }
+    header { text-align:center; margin-bottom:2rem; position:relative; }
+    h1 { font-size:1.8rem; font-weight:300; letter-spacing:0.05em; color:#f0f0f0; }
+    .subtitle { color:var(--text-dim); font-size:0.85rem; font-style:italic; margin-top:0.3rem; }
+
+    .reset-btn { position:absolute; top:0; right:0; background:transparent;
+        border:1px solid var(--border); color:var(--text-dim); width:42px; height:42px;
+        border-radius:10px; font-size:1.1rem; cursor:pointer;
+        transition:all 0.2s; display:flex; align-items:center; justify-content:center; }
+    .reset-btn:hover { border-color:var(--error); color:var(--error); background:#2a1515; }
+    .reset-btn:active { transform:scale(0.95); }
+
+    .quota-bar { background:var(--panel); border:1px solid var(--border); border-radius:12px;
+        padding:0.8rem 1.2rem; margin-bottom:1.5rem; display:flex; gap:1.5rem;
+        flex-wrap:wrap; align-items:center; font-size:0.75rem; }
+    .quota-item { display:flex; align-items:center; gap:0.5rem; }
+    .quota-item .label { color:var(--text-dim); }
+    .quota-item .value { font-weight:600; font-variant-numeric:tabular-nums; }
+    .quota-item .value.ok { color:var(--success); }
+    .quota-item .value.warn { color:var(--warn); }
+    .quota-item .value.danger { color:var(--error); }
+
+    .btn { padding:1rem 2rem; background:var(--accent-dark); color:#0a0a0a; border:none;
+        border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer;
+        transition:background 0.2s,transform 0.1s; width:100%; }
+    .btn:hover:not(:disabled) { background:var(--accent); }
+    .btn:active:not(:disabled) { transform:scale(0.98); }
+    .btn:disabled { background:#333; color:#666; cursor:not-allowed; }
+    .btn-secondary { background:#2a2a2a; color:var(--text); }
+    .btn-secondary:hover:not(:disabled) { background:#3a3a3a; }
+
+    .upload-area { background:var(--panel); border:2px dashed var(--border);
+        border-radius:16px; padding:2.5rem; text-align:center; cursor:pointer;
+        transition:border-color 0.2s, background 0.2s; margin-bottom:1.5rem; }
+    .upload-area:hover, .upload-area.dragover { border-color:var(--accent-dark); background:#1a1525; }
+    .upload-area input[type="file"] { display:none; }
+    .upload-icon { font-size:3rem; margin-bottom:1rem; }
+    .upload-text { font-size:1.1rem; color:var(--text); margin-bottom:0.5rem; }
+    .upload-hint { font-size:0.8rem; color:var(--text-dim); }
+    .preview-thumb { max-width:100%; max-height:200px; border-radius:10px;
+        margin:1rem auto 0; display:none; }
+    .preview-thumb.visible { display:block; }
+
+    .options-row { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .options-row > * { flex:1; min-width:180px; }
+    label { display:block; font-size:0.8rem; color:var(--text-dim); margin-bottom:0.4rem;
+        text-transform:uppercase; letter-spacing:0.08em; }
+    select, input[type="password"], input[type="number"] {
+        width:100%; padding:0.85rem 1rem; border-radius:10px; border:1px solid var(--border);
+        background:#0f0f0f; color:var(--text); font-family:inherit; font-size:0.95rem; }
+    select:focus, input:focus { outline:none; border-color:var(--accent-dark); }
+    select option { background:#1a1a1a; color:var(--text); }
+
+    /* ═══ PANNEAU UNIQUE DE STYLES ═══ */
+    .styles-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
+        gap:0.6rem; margin-bottom:1.5rem; max-height:500px; overflow-y:auto;
+        padding:0.5rem; background:var(--panel); border-radius:12px;
+        border:1px solid var(--border); }
+    .style-checkbox { display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.8rem;
+        background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+        cursor:pointer; font-size:0.8rem; transition:all 0.2s; user-select:none; }
+    .style-checkbox:hover { border-color:var(--accent-dark); }
+    .style-checkbox.checked { background:#2a2035; border-color:var(--accent-dark); color:var(--accent); }
+    .style-checkbox input { width:auto; margin:0; accent-color:var(--accent-dark); }
+
+    .section-title { font-size:0.95rem; color:var(--accent-dark); text-transform:uppercase;
+        letter-spacing:0.1em; margin-bottom:0.8rem; font-weight:600; }
+
+    .queue-panel { margin-top:1.5rem; }
+    .queue-item { display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem;
+        background:var(--panel); border:1px solid var(--border); border-radius:10px;
+        margin-bottom:0.5rem; transition:border-color 0.3s, opacity 0.3s; }
+    .queue-item.pending { opacity:0.5; }
+    .queue-item.processing { border-color:var(--accent-dark); }
+    .queue-item.done { border-color:var(--success); }
+    .queue-item.failed { border-color:var(--error); }
+    .queue-icon { font-size:1.2rem; width:2rem; text-align:center; flex-shrink:0; }
+    .queue-info { flex:1; min-width:0; }
+    .queue-style { font-size:0.85rem; color:var(--accent); font-weight:600; }
+    .queue-meta { font-size:0.7rem; color:var(--text-dim); margin-top:0.15rem;
+        display:flex; gap:0.8rem; flex-wrap:wrap; }
+    .queue-status { font-size:0.75rem; color:var(--text-dim); text-align:right;
+        min-width:80px; flex-shrink:0; }
+
+    .video-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr));
+        gap:1rem; margin-top:1.5rem; }
+    .video-item { background:var(--panel-2); border-radius:12px; overflow:hidden;
+        border:1px solid var(--border); animation:fadeIn 0.6s ease-in; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);}
+        to{opacity:1; transform:translateY(0);} }
+    .video-item video { width:100%; display:block; aspect-ratio:9/16; object-fit:cover;
+        background:#000; }
+    .video-caption { padding:0.6rem 0.8rem; background:var(--panel); }
+    .video-caption-title { font-size:0.8rem; color:var(--accent); font-weight:600; }
+    .video-caption-meta { font-size:0.7rem; color:var(--text-dim); margin-top:0.2rem; }
+
+    .log-box { margin-top:1rem; padding:0.75rem; background:#0f0f0f; border-radius:10px;
+        border:1px solid #222; font-family:ui-monospace,monospace; font-size:0.7rem;
+        color:#666; max-height:180px; overflow-y:auto; display:none; }
+    .log-box.visible { display:block; }
+    .log-box div { padding:1px 0; }
+    .log-box .ok { color:var(--success); }
+    .log-box .err { color:var(--error); }
+    .log-box .warn { color:var(--warn); }
+    .log-box .hl { color:var(--accent); }
+
+    .status-line { font-size:0.9rem; color:var(--accent-dark); margin-bottom:1rem;
+        display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+    .status-line .dot { width:8px; height:8px; border-radius:50%; background:var(--accent-dark);
+        animation:pulse 1.5s infinite; flex-shrink:0; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .cooldown-badge { background:#3a2a15; color:var(--warn); padding:0.2rem 0.6rem;
+        border-radius:6px; font-size:0.75rem; font-weight:600; }
+    .error-box { background:#2a1515; border:1px solid var(--error); border-radius:10px;
+        padding:1rem; color:var(--error); font-size:0.85rem; margin-top:1rem; display:none; }
+    .error-box.visible { display:block; }
+    .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>By Papouch Vidéo</h1>
+        <p class="subtitle">Une image. Une infinité de vidéos.</p>
+        <button class="reset-btn" onclick="resetApplication()" title="Réinitialiser l'application">🗑️</button>
+    </header>
+
+    <div class="quota-bar" id="quota-bar">
+        <div class="quota-item"><span class="label">🎬 Vidéo</span><span class="value ok" id="quota-video">0/1</span><span class="label">RPM</span></div>
+        <div class="quota-item"><span class="label">📝 Texte</span><span class="value ok" id="quota-text">0/20</span><span class="label">RPM</span></div>
+    </div>
+
+    <div class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept="image/*">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text">Appuie pour choisir une image</div>
+        <div class="upload-hint">JPG, PNG, WEBP — elle servira de première frame pour toutes les vidéos</div>
+        <img id="preview-thumb" class="preview-thumb" alt="Aperçu">
+    </div>
+
+    <button class="btn btn-secondary" onclick="clearImage()" style="width:auto; margin-bottom:1.5rem;">
+        🗑️ Retirer l'image
+    </button>
+
+    <!-- ═══ PANNEAU UNIQUE DE STYLES ═══ -->
+    <div class="section-title">🎨 Choisis tes styles (coche-en plusieurs !)</div>
+    <div class="styles-grid" id="styles-grid"></div>
+
+    <div class="options-row">
+        <div>
+            <label for="duration-select">Durée de chaque vidéo</label>
+            <select id="duration-select">
+                <option value="9">0,4 s (flash)</option>
+                <option value="17">0,7 s</option>
+                <option value="33">1,4 s</option>
+                <option value="49">2,0 s</option>
+                <option value="81">3,4 s (story)</option>
+                <option value="121">5,0 s</option>
+                <option value="153" selected>6,4 s (reel)</option>
+                <option value="241">10,0 s</option>
+                <option value="441">18,4 s (mini-film)</option>
+            </select>
+        </div>
+        <div>
+            <label for="motion-select">Mouvement / action</label>
+            <select id="motion-select">
+                <option value="kpop_dance">💜 Choré K-pop</option>
+                <option value="kpop_idol">🌟 Pose d'idol K-pop</option>
+                <option value="kdrama">🎭 Scène de K-drama</option>
+                <option value="tiktok">📱 Danse TikTok</option>
+                <option value="jpop">🌸 Choré J-pop</option>
+                <option value="cpop">🐉 Choré C-pop</option>
+                <option value="anime_hero">⚡ Héros d'anime</option>
+                <option value="manga_combat">🗯️ Combat manga</option>
+                <option value="manga_pose">💥 Pose manga épique</option>
+                <option value="fortnite">🎮 Emote Fortnite</option>
+                <option value="parkour">🏃 Parkour urbain</option>
+                <option value="skate">🛹 Skate / BMX</option>
+                <option value="football">⚽ Célébration foot</option>
+                <option value="basket">🏀 Dunk de basket</option>
+                <option value="hiphop">🎤 Rap / Hip-hop</option>
+                <option value="gaming">🕹️ Perso de jeu vidéo</option>
+                <option value="superhero">🦸 Super-héros</option>
+                <option value="magie">✨ Magie / pouvoirs</option>
+                <option value="explosion">💥 Explosion stylée</option>
+                <option value="slowmo">⏳ Ralenti épique</option>
+                <option value="robot">🤖 Robot / cyborg</option>
+                <option value="funny">😂 Délires rigolos</option>
+            </select>
+        </div>
+        <div>
+            <label for="prompt-mode">Type de prompt</label>
+            <select id="prompt-mode">
+                <option value="random">🎲 Aléatoire (pré-enregistré)</option>
+                <option value="auto">🧠 Auto-généré par IA</option>
+                <option value="manual">✏️ Manuel (je choisis)</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="manual-prompt-row" class="hidden" style="margin-bottom:1rem;">
+        <label for="manual-prompt">Choisis tes prompts vidéo</label>
+        <select id="manual-prompt" multiple style="height:120px;">
+            <!-- rempli dynamiquement -->
+        </select>
+    </div>
+
+    <button id="generate-btn" class="btn" onclick="startGeneration()" disabled>
+        🎬 Générer les vidéos
+    </button>
+
+    <div id="status-panel" class="hidden" style="margin-top:1.5rem;">
+        <div class="status-line">
+            <span class="dot"></span>
+            <span id="global-status-text">Initialisation…</span>
+            <span id="cooldown-badge" class="cooldown-badge" style="display:none;"></span>
+        </div>
+    </div>
+
+    <div id="queue-panel" class="queue-panel hidden"></div>
+
+    <div id="gallery-panel" class="hidden">
+        <div class="section-title">✦ Tes vidéos ✦</div>
+        <div id="video-grid" class="video-grid"></div>
+    </div>
+
+    <div id="log-box" class="log-box"></div>
+</div>
+
+<script>
+// ==================================================================
+// CONFIGURATION
+// ==================================================================
+const API_KEY = "sk-lnTvsZabaWpEGUsLymMdOlSQj8XW48W8a2ONiyC4DFdvvbo1";
+const BASE_URL = "https://apihub.agnes-ai.com/v1";
+const RAW_URL  = "https://apihub.agnes-ai.com";
+
+const MODELS = { text: "agnes-2.0-flash", video: "agnes-video-v2.0" };
+
+const VALID_FRAMES = [9, 17, 33, 49, 81, 121, 153, 241, 441];
+const FRAME_RATE = 24;
+
+const FIRST_POLL_DELAY_MS = 60000;
+const POLL_INTERVAL_MS = 15000;
+const MAX_POLL_ATTEMPTS = 30;
+const INTER_VIDEO_DELAY_MS = 65000;
+const PRE_VIDEO_DELAY_MS = 65000;
+
+const RATE_LIMIT_BACKOFF_SEC = [3, 5, 8, 12, 20, 30, 45, 60];
+const MAX_RATE_LIMIT_RETRIES = 8;
+const NETWORK_ERROR_BACKOFF_SEC = [5, 10, 15, 20, 30, 45, 60];
+const MAX_NETWORK_RETRIES = 7;
+
+// ==================================================================
+// 🎨 TOUS LES STYLES (K-pop + Asie + Manga + Fun) — PANNEAU UNIQUE
+// ==================================================================
+const STYLES = [
+    // ═══════════════════════════════════════════════════════════
+    // 💜🇰🇷 K-POP & ASIE
+    // ═══════════════════════════════════════════════════════════
+    { id:"kpop_idol", name:"K-pop Idol", icon:"💜",
+      prompt:"K-pop idol music video aesthetic, perfectly styled Korean idol, flawless skin, trendy fashion, dynamic choreography pose, pastel and neon stage lighting, sparkles, high fashion, glossy K-pop MV look, vibrant colors, dreamy bokeh" },
+    { id:"kpop_boygroup", name:"Boy Group K-pop", icon:"🖤",
+      prompt:"Korean boy group aesthetic, sharp synchronized dance pose, cool leather jackets, dark moody lighting with neon accents, BTS and Stray Kids vibe, dramatic shadows, powerful stage presence, hip-hop K-pop style" },
+    { id:"kpop_girlgroup", name:"Girl Group K-pop", icon:"💗",
+      prompt:"Korean girl group aesthetic, glamorous synchronized dance pose, sparkling outfits, pastel pink and purple lighting, BLACKPINK and TWICE vibe, confetti and glitter, high fashion, glossy K-pop MV look" },
+    { id:"kpop_solo", name:"K-pop Solo Star", icon:"⭐",
+      prompt:"K-pop solo artist aesthetic, charismatic center stage pose, spotlight from above, smoke and neon lights, confident expression, trendy Korean fashion, cinematic K-pop music video, glamorous and stylish" },
+    { id:"kpop_cute", name:"K-pop Cute / Aegyo", icon:"🌸",
+      prompt:"Cute Korean aegyo style, adorable expression, pastel pink and mint colors, sparkles and hearts, kawaii Korean aesthetic, soft fluffy lighting, cute K-pop idol vibe, bubbly and sweet" },
+    { id:"kpop_dark", name:"K-pop Dark Concept", icon:"🌑",
+      prompt:"Dark K-pop concept, mysterious Korean idol, dramatic red and black lighting, smoke and fog, intense gaze, leather and latex outfits, gothic K-pop aesthetic, powerful and edgy, dramatic cinematic mood" },
+    { id:"kdrama", name:"K-drama", icon:"🎭",
+      prompt:"Korean drama cinematic style, soft romantic lighting, cherry blossom petals, emotional atmosphere, beautiful Korean actor, pastel color grading, Netflix K-drama aesthetic, dreamy bokeh, elegant and emotional" },
+    { id:"korean_street", name:"Korea Street Style", icon:"🇰🇷",
+      prompt:"Korean street fashion aesthetic, trendy Seoul streetwear, Seoul city background with neon signs, cool attitude, modern Korean youth style, urban fashion photography, Hongdae and Gangnam vibe" },
+    { id:"korean_trad", name:"Corée Traditionnelle", icon:"🏯",
+      prompt:"Traditional Korean hanbok aesthetic, elegant silk fabric, Korean palace background, cherry blossoms, graceful pose, traditional Korean culture, beautiful pastel colors, Gyeongbokgung palace vibe" },
+    { id:"korean_beauty", name:"K-beauty", icon:"✨",
+      prompt:"Korean beauty aesthetic, flawless glass skin, dewy makeup, soft pink and peach tones, elegant and clean, K-beauty advertisement style, luxurious skincare vibe, soft natural lighting" },
+    { id:"jpop", name:"J-pop Idol", icon:"🌸",
+      prompt:"Japanese J-pop idol aesthetic, colorful cute outfits, kawaii pose, bright pastel stage lighting, sparkles and confetti, AKB48 and Nogizaka46 vibe, cheerful energetic, Japanese idol music video style" },
+    { id:"anime_hero", name:"Anime Hero", icon:"⚡",
+      prompt:"Japanese anime hero style, cel-shaded 2D animation, spiky hair, glowing energy aura, dynamic action pose, speed lines, shonen protagonist aesthetic, Dragon Ball and Naruto vibe, epic power-up" },
+    { id:"anime_shoujo", name:"Anime Shoujo", icon:"🌷",
+      prompt:"Japanese shoujo anime style, soft pastel colors, sparkles and flower petals, big expressive eyes, romantic dreamy atmosphere, Sailor Moon vibe, delicate and beautiful, magical girl aesthetic" },
+    { id:"japanese_trad", name:"Japon Traditionnel", icon:"🏮",
+      prompt:"Traditional Japanese aesthetic, kimono silk fabric, cherry blossom petals falling, torii gate background, elegant and graceful, ukiyo-e inspiration, beautiful Japanese culture, serene and poetic" },
+    { id:"harajuku", name:"Harajuku Kawaii", icon:"🎀",
+      prompt:"Harajuku kawaii fashion aesthetic, colorful rainbow outfits, pastel hair, cute accessories, Tokyo street fashion, decora style, playful and vibrant, Japanese pop culture, adorable and colorful" },
+    { id:"cpop", name:"C-pop Star", icon:"🐉",
+      prompt:"Chinese pop star aesthetic, elegant modern Chinese fashion, dramatic stage lighting, red and gold accents, powerful pose, C-pop music video, glamorous and luxurious, modern Chinese celebrity style" },
+    { id:"chinese_trad", name:"Chine Traditionnelle", icon:"🏮",
+      prompt:"Traditional Chinese aesthetic, elegant hanfu silk robe, red lanterns, ancient Chinese palace, flowing fabric in the wind, beautiful Chinese culture, cinematic wuxia vibe, majestic and poetic" },
+    { id:"wuxia", name:"Wuxia / Arts Martiaux", icon:"⚔️",
+      prompt:"Chinese wuxia martial arts style, flowing white robes, sword fighting pose, bamboo forest, misty mountains, epic cinematic martial arts, Crouching Tiger Hidden Dragon vibe, graceful combat" },
+    { id:"cdrama", name:"C-drama", icon:"🎬",
+      prompt:"Chinese drama cinematic style, elegant Chinese actor, beautiful traditional or modern setting, soft romantic lighting, emotional atmosphere, Netflix C-drama aesthetic, dreamy and elegant" },
+    { id:"thai_drama", name:"Thaï / Lakorn", icon:"🇹🇭",
+      prompt:"Thai drama aesthetic, beautiful Thai actor, tropical setting, warm golden lighting, emotional atmosphere, Thai Lakorn style, elegant and romantic, Southeast Asian beauty" },
+    { id:"vietnam", name:"Vietnamien", icon:"🇻🇳",
+      prompt:"Vietnamese aesthetic, elegant ao dai dress, lotus flowers, traditional Vietnamese setting, warm golden lighting, beautiful Asian beauty, serene and poetic, cultural elegance" },
+    { id:"filipino", name:"Philippin", icon:"🇵🇭",
+      prompt:"Filipino aesthetic, beautiful tropical setting, warm sunset lighting, elegant Asian beauty, vibrant colors, Southeast Asian vibe, modern and traditional blend, sunny and joyful" },
+    { id:"asian_pop", name:"Asian Pop Star", icon:"🌟",
+      prompt:"Asian pop star aesthetic, glamorous stage performance, dramatic spotlight, trendy Asian fashion, confident pose, K-pop meets J-pop meets C-pop energy, colorful and vibrant, superstar vibe" },
+    { id:"seoul_night", name:"Séoul de Nuit", icon:"🌃",
+      prompt:"Seoul city night aesthetic, neon Korean signs, Namsan tower in background, rainy streets reflecting lights, cool Korean youth vibe, urban Seoul atmosphere, cinematic and moody" },
+    { id:"tokyo_night", name:"Tokyo de Nuit", icon:"🌆",
+      prompt:"Tokyo city night aesthetic, neon Japanese signs, Shibuya crossing, rainy streets reflecting lights, cyberpunk Tokyo vibe, urban Japanese atmosphere, cinematic and vibrant" },
+    { id:"asian_streetwear", name:"Asian Streetwear", icon:"🧢",
+      prompt:"Asian streetwear aesthetic, trendy Seoul and Tokyo fashion, oversized hoodies, cool attitude, urban Asian city background, Hypebeast Asia vibe, modern and stylish, K-fashion meets J-fashion" },
+    { id:"asian_wedding", name:"Mariage Asiatique", icon:"💍",
+      prompt:"Traditional Asian wedding aesthetic, elegant Korean or Chinese wedding attire, beautiful silk fabrics, cherry blossoms, romantic atmosphere, luxurious and cultural, cinematic and emotional" },
+    { id:"asian_food", name:"Street Food Asie", icon:"🍜",
+      prompt:"Asian street food aesthetic, colorful night market, neon signs, steam rising from food, vibrant Asian city, delicious ramen and sushi, warm lighting, Tokyo and Seoul night market vibe" },
+    { id:"asian_festival", name:"Festival Asiatique", icon:"🏮",
+      prompt:"Asian festival aesthetic, colorful lanterns, traditional festival celebration, fireworks, joyful atmosphere, cherry blossoms and red lanterns, cultural celebration, vibrant and festive" },
+
+    // ═══════════════════════════════════════════════════════════
+    // 📖 MANGA / ANIME (styles supplémentaires)
+    // ═══════════════════════════════════════════════════════════
+    { id:"manga_classic", name:"Manga Classique", icon:"📖",
+      prompt:"Classic Japanese manga style, black and white ink drawing, screentone shading, bold expressive lines, dramatic speed lines, Japanese comic book aesthetic, dynamic action panels" },
+    { id:"manga_shonen", name:"Manga Shonen", icon:"🔥",
+      prompt:"Shonen manga style, intense action, spiky hair protagonist, power-up aura, dynamic fight pose, speed lines and impact effects, Dragon Ball and One Piece vibe, epic battle energy" },
+    { id:"manga_shoujo", name:"Manga Shoujo", icon:"🌷",
+      prompt:"Shoujo manga style, soft delicate lines, sparkles and flower petals, big expressive eyes, romantic atmosphere, pastel tones, Sailor Moon and Cardcaptor Sakura vibe, dreamy and beautiful" },
+    { id:"manga_seinen", name:"Manga Seinen", icon:"🖤",
+      prompt:"Seinen manga style, mature and detailed art, realistic proportions, dark atmosphere, intricate linework, cinematic composition, Berserk and Vagabond vibe, gritty and intense" },
+    { id:"manga_chibi", name:"Manga Chibi", icon:"🍡",
+      prompt:"Chibi manga style, super deformed cute characters, big heads and tiny bodies, adorable expressions, colorful and playful, kawaii chibi aesthetic, funny and cute" },
+    { id:"manga_mecha", name:"Manga Mecha", icon:"🤖",
+      prompt:"Mecha manga style, giant robot, detailed mechanical design, sci-fi battle scene, dramatic perspective, Gundam and Evangelion vibe, epic combat, futuristic warfare" },
+    { id:"manga_isekai", name:"Manga Isekai", icon:"🌀",
+      prompt:"Isekai manga style, fantasy otherworld setting, magical portal, epic adventure atmosphere, anime fantasy character, Sword Art Online and Re:Zero vibe, magical and adventurous" },
+    { id:"manga_slice", name:"Manga Tranche de Vie", icon:"🍵",
+      prompt:"Slice of life manga style, everyday peaceful scene, soft warm colors, gentle atmosphere, cozy Japanese setting, Studio Ghibli meets Nichijou vibe, calm and heartwarming" },
+    { id:"manga_horror", name:"Manga Horreur", icon:"👁️",
+      prompt:"Horror manga style, unsettling atmosphere, Junji Ito aesthetic, detailed creepy textures, dark shadows, spiral patterns, psychological horror, disturbing and eerie" },
+    { id:"manga_cyberpunk", name:"Manga Cyberpunk", icon:"🌃",
+      prompt:"Cyberpunk manga style, neon-drenched futuristic city, detailed tech, Akira and Ghost in the Shell vibe, dramatic perspective, high contrast, dystopian atmosphere" },
+
+    // ═══════════════════════════════════════════════════════════
+    // 🎮 GAMING / ANIMATION 3D
+    // ═══════════════════════════════════════════════════════════
+    { id:"minecraft", name:"Minecraft", icon:"⛏️",
+      prompt:"Minecraft blocky voxel style, cube-based world, pixelated textures, blocky character models, bright saturated colors, low-poly aesthetic, sandbox game look" },
+    { id:"fortnite", name:"Fortnite", icon:"🎮",
+      prompt:"Fortnite stylized 3D game aesthetic, vibrant cartoonish colors, exaggerated proportions, glossy textures, battle royale vibe, dynamic pose, colorful environment" },
+    { id:"roblox", name:"Roblox", icon:"🧱",
+      prompt:"Roblox blocky avatar style, simple geometric shapes, bright flat colors, cartoonish low-poly, iconic Roblox character design, playful game vibe" },
+    { id:"pokemon", name:"Pokémon", icon:"⚡",
+      prompt:"Pokémon anime style, bright vibrant colors, cute expressive characters, cel-shaded animation, dynamic battle poses, sparkles and energy effects, Nintendo aesthetic" },
+    { id:"pixar", name:"Pixar 3D", icon:"✨",
+      prompt:"Pixar 3D animation style, high quality rendering, expressive big eyes, soft lighting, detailed textures, cinematic family movie look, cute and charming" },
+    { id:"pixel", name:"Pixel Art 8-bit", icon:"👾",
+      prompt:"Retro 8-bit pixel art animation, chunky pixels, limited color palette, old-school NES arcade game style, sprite animation, nostalgic video game aesthetic" },
+
+    // ═══════════════════════════════════════════════════════════
+    // 📱 RÉSEAUX SOCIAUX / TENDANCE
+    // ═══════════════════════════════════════════════════════════
+    { id:"tiktok", name:"TikTok Trend", icon:"📱",
+      prompt:"TikTok viral video aesthetic, vertical 9:16 framing, dynamic fast cuts energy, trendy lighting, neon accents, Gen-Z style, colorful filters, social media vibe" },
+    { id:"vaporwave", name:"Vaporwave", icon:"🌴",
+      prompt:"Vaporwave aesthetic, pastel pink and cyan gradients, Greek statues, retro 90s computers, palm trees, VHS glitch effects, nostalgic dreamy atmosphere" },
+    { id:"y2k", name:"Y2K", icon:"💿",
+      prompt:"Y2K aesthetic, early 2000s style, metallic silver and baby blue, flip phones, frosted tips, low-rise jeans, shiny textures, butterfly clips, retro-futuristic pop" },
+    { id:"cyberpunk", name:"Cyberpunk Néon", icon:"🌃",
+      prompt:"Cyberpunk neon aesthetic, glowing pink and cyan lights, rain-slicked streets, holographic ads, futuristic city, chromatic aberration, Blade Runner meets gaming" },
+    { id:"synthwave", name:"Synthwave 80s", icon:"🎹",
+      prompt:"Synthwave 80s retro aesthetic, neon grid, sunset gradients, chrome text, DeLorean vibes, VHS scan lines, purple and pink palette, nostalgic electronic mood" },
+    { id:"meme", name:"Meme Energy", icon:"😂",
+      prompt:"Internet meme aesthetic, absurd humor, exaggerated expressions, zoom-in dramatic effect, deep-fried filter, chaotic energy, funny viral video style" },
+
+    // ═══════════════════════════════════════════════════════════
+    // ⚽ SPORTS / ACTION
+    // ═══════════════════════════════════════════════════════════
+    { id:"football", name:"Football / Foot", icon:"⚽",
+      prompt:"Football soccer action, stadium atmosphere, green pitch, dynamic kick pose, sweat droplets, epic goal celebration, sports photography style, energetic" },
+    { id:"basket", name:"Basketball", icon:"🏀",
+      prompt:"Basketball streetball aesthetic, urban court, slam dunk action, sweat and motion blur, hip-hop culture, dynamic athletic pose, sports energy" },
+    { id:"parkour", name:"Parkour", icon:"🏃",
+      prompt:"Parkour freerunning action, urban rooftops, dynamic jump, motion blur, adrenaline energy, GoPro perspective, cityscape background, athletic movement" },
+    { id:"skate", name:"Skate / Street", icon:"🛹",
+      prompt:"Skateboarding street culture aesthetic, urban concrete, graffiti walls, fisheye lens, gritty texture, 90s VHS skate video vibe, cool attitude" },
+    { id:"superhero", name:"Super-Héros", icon:"🦸",
+      prompt:"Superhero cinematic style, dramatic pose, cape flowing in wind, epic lighting, comic book energy, Marvel and DC aesthetic, powerful stance, hero landing" },
+    { id:"explosion", name:"Explosion Stylée", icon:"💥",
+      prompt:"Epic explosion style, Michael Bay aesthetic, dramatic fire and sparks, slow-motion debris, lens flares, action movie vibe, over-the-top energy" },
+
+    // ═══════════════════════════════════════════════════════════
+    // ✨ FANTASTIQUE / MAGIQUE
+    // ═══════════════════════════════════════════════════════════
+    { id:"magie", name:"Magie / Pouvoirs", icon:"✨",
+      prompt:"Magic and superpowers style, glowing energy effects, sparkles and particles, magic circle, mystical aura, fantasy anime vibe, spell casting" },
+    { id:"dragon", name:"Dragon / Fantasy", icon:"🐉",
+      prompt:"Epic fantasy style, dragon in the sky, medieval fantasy setting, magic atmosphere, dramatic clouds, Lord of the Rings vibe, mystical creatures" },
+    { id:"space", name:"Espace / Galaxie", icon:"🚀",
+      prompt:"Cosmic space aesthetic, nebula colors, stars and galaxies, astronaut vibe, sci-fi atmosphere, purple and blue cosmic tones, Interstellar mood" },
+    { id:"zombie", name:"Zombie / Horreur", icon:"🧟",
+      prompt:"Zombie apocalypse style, dark desaturated colors, fog and mist, horror atmosphere, dramatic shadows, The Walking Dead vibe, survival energy" },
+    { id:"noel", name:"Noël / Fêtes", icon:"🎄",
+      prompt:"Christmas festive style, warm golden lights, snow falling, cozy atmosphere, red and green palette, magical holiday vibe, twinkling decorations" },
+
+    // ═══════════════════════════════════════════════════════════
+    // 🎨 ARTISTIQUE / FUN
+    // ═══════════════════════════════════════════════════════════
+    { id:"graffiti", name:"Graffiti / Street Art", icon:"🎨",
+      prompt:"Graffiti street art style, spray paint colors, urban wall, bold outlines, hip-hop culture, vibrant tags, Banksy-inspired aesthetic" },
+    { id:"popart", name:"Pop Art", icon:"🍭",
+      prompt:"Pop art style, Andy Warhol aesthetic, bold primary colors, halftone dots, comic book panels, Roy Lichtenstein vibe, repetitive motifs" },
+    { id:"neon", name:"Néon Glow", icon:"💡",
+      prompt:"Neon glow aesthetic, dark background, glowing outlines, pink and blue neon tubes, club atmosphere, futuristic lighting, electric energy" },
+    { id:"aquarelle", name:"Aquarelle Fun", icon:"🎨",
+      prompt:"Watercolor painting style, soft pastel colors, dreamy bleeding edges, artistic brush strokes, whimsical illustration, cute and gentle vibe" },
+    { id:"sticker", name:"Sticker / Doodle", icon:"💫",
+      prompt:"Cute sticker doodle style, hand-drawn kawaii, bold outlines, pastel colors, emoji-like expressions, playful and fun, bullet journal aesthetic" }
+];
+
+// ==================================================================
+// PROMPTS ALÉATOIRES FUN (K-pop + Manga)
+// ==================================================================
+const RANDOM_ACTIONS = [
+    "The character strikes an epic K-pop idol pose with perfect synchronization and charisma",
+    "A viral TikTok dance move with swagger, attitude, and perfect timing",
+    "The character bursts into a K-pop choreography with sharp and precise movements",
+    "An epic manga power-up sequence as the character gets surrounded by glowing energy",
+    "The character does a dramatic K-drama slow-motion walk with wind blowing their hair",
+    "A funny manga reaction face with exaggerated expressions and sweat drops",
+    "The character performs a J-pop idol pose with cute kawaii energy and sparkles",
+    "An epic manga fight scene with speed lines and impact effects",
+    "A dramatic idol entrance as the character walks in like they own the stage",
+    "The character does an epic K-pop center pose with a powerful gaze at the camera",
+    "The character makes a funny aegyo face directly at the camera with hearts floating",
+    "A manga hero landing pose with dust and debris flying everywhere",
+    "The character pulls off an incredible anime-style combo move with speed lines",
+    "The character looks dramatically into the distance like in a manga final panel",
+    "A slow-motion idol hair flip moment that looks absolutely iconic"
+];
+
+const RANDOM_LIGHTING = [
+    "epic K-pop stage lighting with pink and purple neon glow and sparkles",
+    "dramatic golden hour sunset lighting with warm dreamy tones",
+    "manga-style dramatic speed lines and impact flashes",
+    "dramatic spotlight from above like on a K-pop idol stage",
+    "magical sparkles and glowing particles floating around like in a manga",
+    "cinematic lens flares and dreamy bokeh like a K-drama scene",
+    "soft pastel dreamy lighting with cherry blossom petals floating",
+    "high contrast dramatic shadows like in a dark manga panel",
+    "colorful rainbow gradient lighting with vibrant idol stage hues",
+    "futuristic holographic light effects shimmering like a K-pop MV"
+];
+
+const RANDOM_CAMERA = [
+    "epic slow-motion shot that makes everything look 10x cooler like a K-pop MV",
+    "dynamic 360-degree spin around the character like in a music video",
+    "extreme close-up on the face for maximum manga drama",
+    "drone shot flying around the character like in a concert",
+    "fast zoom-in for a dramatic manga effect",
+    "handheld shaky cam for a vlog-style idol vibe",
+    "dramatic low-angle shot looking up at the character like a manga hero",
+    "smooth tracking shot following the K-pop choreography",
+    "time-freeze moment where the camera orbits the character like in a manga",
+    "POV shot from the character's perspective for immersion like a K-drama"
+];
+
+// ==================================================================
+// QUOTA TRACKER
+// ==================================================================
+const QUOTA_LIMITS = { text: 20, video: 1 };
+const WINDOW_MS = 60000;
+
+const quotaTracker = {
+    text: [], video: [],
+    record(type) {
+        this[type].push(Date.now());
+        this.cleanup();
+        this.render();
+    },
+    cleanup() {
+        const cutoff = Date.now() - WINDOW_MS;
+        for (const t of ['text','video']) this[t] = this[t].filter(x => x > cutoff);
+    },
+    canProceed(type) {
+        this.cleanup();
+        return this[type].length < QUOTA_LIMITS[type];
+    },
+    waitTime(type) {
+        this.cleanup();
+        if (this[type].length < QUOTA_LIMITS[type]) return 0;
+        return Math.max(0, Math.ceil((this[type][0] + WINDOW_MS - Date.now()) / 1000));
+    },
+    reset() {
+        this.text = [];
+        this.video = [];
+        this.render();
+    },
+    render() {
+        const renderItem = (type) => {
+            const el = document.getElementById(`quota-${type}`);
+            if (!el) return;
+            const count = this[type].length;
+            const limit = QUOTA_LIMITS[type];
+            el.textContent = `${count}/${limit}`;
+            el.className = 'value ' + (count >= limit ? 'danger' : count >= limit - 1 ? 'warn' : 'ok');
+        };
+        renderItem('text'); renderItem('video');
+    }
+};
+setInterval(() => quotaTracker.render(), 1000);
+
+// ==================================================================
+// ÉTAT GLOBAL
+// ==================================================================
+let state = {
+    isRunning: false,
+    imageDataUri: null,
+    selectedStyles: new Set(),
+    durationFrames: 153,
+    motionKey: "kpop_dance",
+    promptMode: "random",
+    queue: [],
+    completed: 0
+};
+
+// ==================================================================
+// UTILITAIRES
+// ==================================================================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function log(msg, cls="") {
+    const el = document.getElementById("log-box");
+    el.classList.add("visible");
+    const d = document.createElement("div");
+    d.className = cls;
+    d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    el.appendChild(d);
+    el.scrollTop = el.scrollHeight;
+}
+function setStatus(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+function showCooldown(sec) {
+    const el = document.getElementById("cooldown-badge");
+    if (!el) return;
+    if (sec > 0) { el.textContent = `⏸ ${sec}s`; el.style.display = "inline-block"; }
+    else { el.style.display = "none"; }
+}
+function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, c => (
+        {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]
+    ));
+}
+
+async function countdown(seconds, label) {
+    for (let s = seconds; s > 0; s--) {
+        if (!state.isRunning) throw new Error("Annulé");
+        setStatus("global-status-text", `${label} (${s}s)`);
+        showCooldown(s);
+        await sleep(1000);
+    }
+    showCooldown(0);
+}
+
+async function waitForQuota(type, label) {
+    while (!quotaTracker.canProceed(type)) {
+        const wait = quotaTracker.waitTime(type);
+        if (wait <= 0) break;
+        log(`⏸ Quota ${type} saturé. Attente ${wait}s…`, "warn");
+        await countdown(wait, label || `⏸ Quota ${type}`);
+    }
+}
+
+// ==================================================================
+// API FETCH
+// ==================================================================
+async function apiFetch(url, options = {}, label = "API", type = null) {
+    let rateAttempt = 0, netAttempt = 0;
+    if (type) await waitForQuota(type, `⏸ Quota ${type}`);
+
+    while (true) {
+        let res;
+        try {
+            res = await fetch(url, options);
+        } catch (netErr) {
+            if (netAttempt >= MAX_NETWORK_RETRIES) throw new Error(`Erreur réseau : ${netErr.message}`);
+            const waitSec = NETWORK_ERROR_BACKOFF_SEC[netAttempt] || 60;
+            log(`⚠️ ${label} : erreur réseau. Retry ${netAttempt+1}/${MAX_NETWORK_RETRIES} dans ${waitSec}s…`, "warn");
+            await countdown(waitSec, "🔌 Erreur réseau");
+            netAttempt++;
+            continue;
+        }
+        netAttempt = 0;
+        if (res.status !== 429) {
+            if (type && res.ok) quotaTracker.record(type);
+            return res;
+        }
+        if (rateAttempt >= MAX_RATE_LIMIT_RETRIES) return res;
+        const waitSec = RATE_LIMIT_BACKOFF_SEC[rateAttempt] || 60;
+        log(`⚠️ ${label} : RATE LIMIT 429. Attente ${waitSec}s (${rateAttempt+1}/${MAX_RATE_LIMIT_RETRIES})…`, "warn");
+        await countdown(waitSec, "⏸ Rate limit");
+        rateAttempt++;
+    }
+}
+
+function apiHeaders() {
+    return { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" };
+}
+
+function fileToDataUri(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error("Erreur lecture fichier."));
+        reader.readAsDataURL(file);
+    });
+}
+
+// ==================================================================
+// CONSTRUCTION DU PROMPT
+// ==================================================================
+function buildPrompt(style, durationFrames, motionKey, promptMode, imageDataUri) {
+    if (promptMode === "manual") {
+        const manualSel = document.getElementById("manual-prompt");
+        const selected = Array.from(manualSel.selectedOptions).map(o => o.value);
+        if (selected.length > 0) {
+            const idx = state.queue.length % selected.length;
+            return selected[idx];
+        }
+    }
+
+    const action = RANDOM_ACTIONS[Math.floor(Math.random() * RANDOM_ACTIONS.length)];
+    const lighting = RANDOM_LIGHTING[Math.floor(Math.random() * RANDOM_LIGHTING.length)];
+    const camera = RANDOM_CAMERA[Math.floor(Math.random() * RANDOM_CAMERA.length)];
+
+    const motionDesc = {
+        "kpop_dance": "sharp K-pop choreography, perfectly synchronized dance moves, idol stage presence, sharp angles and fluid transitions",
+        "kpop_idol": "iconic K-pop idol pose, charismatic gaze at the camera, flawless center position, powerful stage presence",
+        "kdrama": "emotional K-drama moment, cinematic slow movement, dramatic pause, wind blowing through hair, romantic tension",
+        "tiktok": "viral TikTok dance, fast trendy moves, cool attitude, social media energy, confident swagger",
+        "jpop": "cute J-pop idol choreography, kawaii moves, sparkling energy, joyful and energetic performance",
+        "cpop": "elegant C-pop dance, graceful and powerful, modern Chinese pop star energy",
+        "anime_hero": "anime-style hero move, dynamic speed lines, glowing power aura, epic combat pose",
+        "manga_combat": "intense manga combat scene, dramatic impact, speed lines everywhere, explosive action, shockwave effects",
+        "manga_pose": "epic manga hero pose, dramatic stance, wind blowing, power aura glowing, iconic panel-worthy moment",
+        "fortnite": "Fortnite emote dance, exaggerated cool moves, video game character energy",
+        "parkour": "urban parkour movement, dynamic jumps and flips, adrenaline-filled motion",
+        "skate": "skateboarding trick, cool street style, smooth and stylish motion",
+        "football": "football celebration, epic goal moment, passionate energy, dynamic kick",
+        "basket": "basketball slam dunk, powerful athletic move, streetball attitude",
+        "hiphop": "hip-hop dance moves, urban swagger, body isolations and popping",
+        "gaming": "video game character move, epic ability animation, gaming hero energy",
+        "superhero": "superhero landing, cape flowing, epic power pose, cinematic hero moment",
+        "magie": "magical spell casting, glowing energy hands, sparkles and light effects",
+        "explosion": "dramatic explosion behind the character, epic action movie moment, slow-motion debris",
+        "slowmo": "ultra slow-motion movement, every micro-detail visible, epic cinematic pacing",
+        "robot": "robotic jerky movements, mechanical precision, futuristic cyborg energy",
+        "funny": "funny and absurd movements, comedic timing, meme-worthy energy, silly expressions"
+    }[motionKey] || "expressive movement";
+
+    return `${style.prompt}. ${action}. ${motionDesc}. ${lighting}. ${camera}. Sound design: minimal foley, soft ambient textures, no music, no instruments. Cinematic, 9:16 vertical, 24fps, consistent character design, no text, no subtitles.`;
+}
+
+// ==================================================================
+// UI — GRILLE DE STYLES UNIQUE
+// ==================================================================
+function renderStylesGrid() {
+    const grid = document.getElementById("styles-grid");
+    grid.innerHTML = STYLES.map(s => `
+        <label class="style-checkbox ${state.selectedStyles.has(s.id) ? 'checked' : ''}"
+               data-id="${s.id}">
+            <input type="checkbox" ${state.selectedStyles.has(s.id) ? 'checked' : ''}
+                   onchange="toggleStyle('${s.id}', this.checked)">
+            ${s.icon} ${s.name}
+        </label>
+    `).join("");
+    updateGenerateBtn();
+}
+
+function toggleStyle(id, checked) {
+    if (checked) state.selectedStyles.add(id);
+    else state.selectedStyles.delete(id);
+    document.querySelectorAll(".style-checkbox").forEach(el => {
+        if (el.dataset.id === id) el.classList.toggle("checked", checked);
+    });
+    updateGenerateBtn();
+}
+
+function updateGenerateBtn() {
+    const btn = document.getElementById("generate-btn");
+    const hasImage = !!state.imageDataUri;
+    const hasStyles = state.selectedStyles.size > 0;
+    btn.disabled = !hasImage || !hasStyles || state.isRunning;
+    btn.textContent = state.isRunning
+        ? `🎬 Génération en cours… (${state.completed}/${state.queue.length})`
+        : `🎬 Générer ${state.selectedStyles.size} vidéo${state.selectedStyles.size > 1 ? 's' : ''}`;
+}
+
+// ==================================================================
+// UPLOAD IMAGE
+// ==================================================================
+const uploadArea = document.getElementById("upload-area");
+const fileInput = document.getElementById("file-input");
+const previewThumb = document.getElementById("preview-thumb");
+
+uploadArea.addEventListener("click", () => fileInput.click());
+uploadArea.addEventListener("dragover", (e) => { e.preventDefault(); uploadArea.classList.add("dragover"); });
+uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+uploadArea.addEventListener("drop", (e) => {
+    e.preventDefault(); uploadArea.classList.remove("dragover");
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+    if (!file.type.startsWith("image/")) { alert("Fichier non image."); return; }
+    if (file.size > 10 * 1024 * 1024) { alert("Image trop lourde (max 10 MB)."); return; }
+    try {
+        const dataUri = await fileToDataUri(file);
+        state.imageDataUri = dataUri;
+        previewThumb.src = dataUri;
+        previewThumb.classList.add("visible");
+        log(`Image chargée (${(file.size / 1024).toFixed(0)} Ko).`, "ok");
+        updateGenerateBtn();
+    } catch (err) { alert("Erreur : " + err.message); }
+}
+
+function clearImage() {
+    state.imageDataUri = null;
+    fileInput.value = "";
+    previewThumb.src = "";
+    previewThumb.classList.remove("visible");
+    log("Image retirée.", "");
+    updateGenerateBtn();
+}
+
+// ==================================================================
+// FILE D'ATTENTE
+// ==================================================================
+function renderQueue() {
+    const panel = document.getElementById("queue-panel");
+    if (state.queue.length === 0) { panel.classList.add("hidden"); return; }
+    panel.classList.remove("hidden");
+
+    panel.innerHTML = state.queue.map((item, i) => {
+        let icon = "⏳", statusText = "En attente";
+        if (item.status === "processing") { icon = "◐"; statusText = item.progress || "Génération…"; }
+        else if (item.status === "done") { icon = "✅"; statusText = "Terminé"; }
+        else if (item.status === "failed") { icon = "❌"; statusText = "Échec"; }
+
+        const cls = item.status === "pending" ? "pending"
+                  : item.status === "processing" ? "processing"
+                  : item.status === "done" ? "done" : "failed";
+
+        const durationSec = (item.numFrames / 24).toFixed(1);
+        return `
+            <div class="queue-item ${cls}">
+                <div class="queue-icon">${icon}</div>
+                <div class="queue-info">
+                    <div class="queue-style">${item.style.icon} ${esc(item.style.name)}</div>
+                    <div class="queue-meta">
+                        <span>⏱ ${durationSec}s</span>
+                        <span>🎬 ${esc(item.motionKey)}</span>
+                    </div>
+                </div>
+                <div class="queue-status">${statusText}</div>
+            </div>
+        `;
+    }).join("");
+}
+
+// ==================================================================
+// WORKFLOW PRINCIPAL
+// ==================================================================
+async function startGeneration() {
+    if (state.isRunning) return;
+
+    if (!state.imageDataUri) { alert("Choisissez une image."); return; }
+    if (state.selectedStyles.size === 0) { alert("Cochez au moins un style."); return; }
+
+    state.isRunning = true;
+    state.completed = 0;
+
+    const durationSelect = document.getElementById("duration-select");
+    const motionSelect = document.getElementById("motion-select");
+    const promptModeSelect = document.getElementById("prompt-mode");
+
+    state.durationFrames = parseInt(durationSelect.value, 10) || 153;
+    state.motionKey = motionSelect.value;
+    state.promptMode = promptModeSelect.value;
+
+    const selectedStyles = Array.from(state.selectedStyles)
+        .map(id => STYLES.find(s => s.id === id))
+        .filter(Boolean);
+
+    state.queue = selectedStyles.map(style => ({
+        style,
+        status: "pending",
+        videoUrl: null,
+        videoId: null,
+        progress: null,
+        numFrames: state.durationFrames,
+        motionKey: state.motionKey,
+        prompt: null
+    }));
+
+    document.getElementById("video-grid").innerHTML = "";
+    document.getElementById("gallery-panel").classList.add("hidden");
+    document.getElementById("log-box").innerHTML = "";
+    document.getElementById("status-panel").classList.remove("hidden");
+    document.getElementById("queue-panel").classList.remove("hidden");
+
+    renderQueue();
+    updateGenerateBtn();
+
+    log(`🎬 Démarrage — ${state.queue.length} vidéos à générer`, "hl");
+    log(`Durée par vidéo : ${(state.durationFrames / 24).toFixed(1)}s | Mouvement : ${state.motionKey}`, "");
+
+    try {
+        if (quotaTracker.video.length > 0) {
+            const wait = quotaTracker.waitTime("video");
+            if (wait > 0) {
+                log(`Pause de ${wait}s avant le premier appel vidéo…`, "warn");
+                await countdown(wait, "⏸ Quota vidéo");
+            }
+        } else {
+            log(`Pause de ${PRE_VIDEO_DELAY_MS / 1000}s avant le premier clip…`, "warn");
+            await countdown(Math.floor(PRE_VIDEO_DELAY_MS / 1000), "⏸ Pause pré-vidéo");
+        }
+
+        for (let i = 0; i < state.queue.length; i++) {
+            if (!state.isRunning) break;
+            const item = state.queue[i];
+
+            log(`━━━ Vidéo ${i+1}/${state.queue.length} — ${item.style.icon} ${item.style.name} ━━━`, "hl");
+            item.status = "processing";
+            item.progress = "Création…";
+            renderQueue();
+
+            let finalPrompt;
+            if (state.promptMode === "auto") {
+                try {
+                    finalPrompt = await generatePromptWithAI(item.style, state.motionKey, state.imageDataUri);
+                } catch (err) {
+                    log(`Prompt IA échoué, on utilise le prompt aléatoire.`, "warn");
+                    finalPrompt = buildPrompt(item.style, item.numFrames, state.motionKey, "random", state.imageDataUri);
+                }
+            } else {
+                finalPrompt = buildPrompt(item.style, item.numFrames, state.motionKey, state.promptMode, state.imageDataUri);
+            }
+            item.prompt = finalPrompt;
+
+            let videoId;
+            try {
+                const body = {
+                    model: MODELS.video,
+                    prompt: finalPrompt,
+                    image: state.imageDataUri,
+                    num_frames: item.numFrames,
+                    frame_rate: FRAME_RATE
+                };
+
+                const res = await apiFetch(`${BASE_URL}/videos`, {
+                    method: "POST", headers: apiHeaders(), body: JSON.stringify(body)
+                }, `Vidéo ${i+1} · Création`, "video");
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`HTTP ${res.status} — ${errText.slice(0, 120)}`);
+                }
+                const data = await res.json();
+                videoId = data.video_id || data.id || data.task_id;
+                if (!videoId) throw new Error("Pas de video_id.");
+                item.videoId = videoId;
+                log(`Vidéo ${i+1} : tâche créée (${String(videoId).slice(0, 25)}…)`, "ok");
+            } catch (err) {
+                log(`Vidéo ${i+1} : échec création — ${err.message}`, "err");
+                item.status = "failed";
+                item.progress = "Échec création";
+                renderQueue();
+                if (i < state.queue.length - 1 && state.isRunning) {
+                    await countdown(Math.floor(INTER_VIDEO_DELAY_MS / 1000), "⏸ Pause inter-vidéo");
+                }
+                continue;
+            }
+
+            try {
+                const url = await pollVideo(videoId, `Vidéo ${i+1}`, item);
+                item.status = "done";
+                item.videoUrl = url;
+                item.progress = "Terminé";
+                state.completed++;
+                renderQueue();
+                addVideoToGallery(item);
+                document.getElementById("gallery-panel").classList.remove("hidden");
+                log(`Vidéo ${i+1} : ✅ TERMINÉE`, "ok");
+            } catch (err) {
+                log(`Vidéo ${i+1} : ${err.message}`, "err");
+                item.status = "failed";
+                item.progress = "Échec";
+                renderQueue();
+            }
+
+            updateGenerateBtn();
+
+            if (i < state.queue.length - 1 && state.isRunning) {
+                log(`Pause de ${INTER_VIDEO_DELAY_MS / 1000}s avant la vidéo suivante…`, "warn");
+                await countdown(Math.floor(INTER_VIDEO_DELAY_MS / 1000), "⏸ Pause inter-vidéo");
+            }
+        }
+
+        log(`✦ Workflow terminé — ${state.completed}/${state.queue.length} vidéos générées ✦`,
+            state.completed > 0 ? "ok" : "err");
+        setStatus("global-status-text", `✦ ${state.completed}/${state.queue.length} vidéos générées ✦`);
+
+    } catch (err) {
+        log(`Erreur globale : ${err.message}`, "err");
+        setStatus("global-status-text", "Erreur : " + err.message);
+    } finally {
+        state.isRunning = false;
+        showCooldown(0);
+        updateGenerateBtn();
+    }
+}
+
+// ==================================================================
+// GÉNÉRATION DE PROMPT PAR IA
+// ==================================================================
+async function generatePromptWithAI(style, motionKey, imageDataUri) {
+    const systemPrompt = `You are a world-class prompt engineer for text-to-video AI models. You receive a reference image and a visual style. Your mission: write ONE single English video prompt (under 600 characters) that animates the image in that style.
+
+STYLE: ${style.name}
+STYLE KEYWORDS: ${style.prompt}
+MOTION: ${motionKey}
+
+RULES:
+- Preserve the subject and composition of the reference image
+- Describe camera movement, lighting, and motion
+- No music, no subtitles, no text in the video
+- End with: "cinematic, 9:16 vertical, 24fps, no text, no subtitles, consistent character design"
+
+Return ONLY the prompt text, no quotes, no JSON.`;
+
+    const res = await apiFetch(`${BASE_URL}/chat/completions`, {
+        method: "POST", headers: apiHeaders(),
+        body: JSON.stringify({
+            model: MODELS.text,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: "Write the video prompt." }
+            ],
+            temperature: 0.9,
+            max_tokens: 300
+        })
+    }, "Texte · Prompt IA", "text");
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return (data.choices?.[0]?.message?.content || "").trim();
+}
+
+// ==================================================================
+// POLLING VIDÉO
+// ==================================================================
+async function pollVideo(videoId, label, item) {
+    let remaining = Math.floor(FIRST_POLL_DELAY_MS / 1000);
+    while (remaining > 0 && state.isRunning) {
+        item.progress = `Attente… ${remaining}s`;
+        renderQueue();
+        await sleep(1000);
+        remaining--;
+    }
+    if (!state.isRunning) throw new Error("Annulé");
+
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        if (!state.isRunning) throw new Error("Annulé");
+        if (attempt > 0) {
+            let r = Math.floor(POLL_INTERVAL_MS / 1000);
+            while (r > 0 && state.isRunning) {
+                item.progress = `Vérif. ${attempt+1} — ${r}s`;
+                renderQueue();
+                await sleep(1000);
+                r--;
+            }
+        }
+
+        const url = `${RAW_URL}/agnesapi?video_id=${encodeURIComponent(videoId)}&model_name=${encodeURIComponent(MODELS.video)}`;
+        try {
+            const r = await apiFetch(url, { method: "GET", headers: apiHeaders() }, `${label} · Poll`);
+            const d = await r.json();
+            const status = d.status || "unknown";
+            const progress = d.progress ?? 0;
+            log(`${label} : statut="${status}", progression=${progress}%`);
+            item.progress = `${progress}%`;
+            renderQueue();
+
+            if (status === "completed" || status === "succeeded") {
+                const videoUrl = d.metadata?.url || d.url || d.output?.url;
+                if (!videoUrl) throw new Error("Terminé mais pas d'URL.");
+                return videoUrl;
+            }
+            if (status === "failed" || status === "error")
+                throw new Error("La génération a échoué.");
+        } catch (err) {
+            if (err.message.includes("échoué") || err.message.includes("URL")) throw err;
+            log(`${label} : erreur polling, on réessaie…`, "warn");
+        }
+    }
+    throw new Error("Délai maximal dépassé.");
+}
+
+// ==================================================================
+// GALERIE
+// ==================================================================
+function addVideoToGallery(item) {
+    const grid = document.getElementById("video-grid");
+    const el = document.createElement("div");
+    el.className = "video-item";
+    const durationSec = (item.numFrames / 24).toFixed(1);
+    el.innerHTML = `
+        <video controls preload="metadata" autoplay muted playsinline>
+            <source src="${item.videoUrl}" type="video/mp4">
+        </video>
+        <div class="video-caption">
+            <div class="video-caption-title">${item.style.icon} ${esc(item.style.name)}</div>
+            <div class="video-caption-meta">⏱ ${durationSec}s · 🎬 ${esc(item.motionKey)}</div>
+        </div>
+    `;
+    grid.appendChild(el);
+}
+
+// ==================================================================
+// RÉINITIALISATION COMPLÈTE (corbeille)
+// ==================================================================
+function resetApplication() {
+    if (!confirm("🗑️ Réinitialiser l'application ?\n\nCela va :\n- Arrêter toute génération en cours\n- Vider la file d'attente\n- Vider la galerie de vidéos\n- Retirer l'image chargée\n- Décocher tous les styles\n- Effacer les logs\n- Réinitialiser les quotas")) return;
+
+    state.isRunning = false;
+    state.imageDataUri = null;
+    state.selectedStyles.clear();
+    state.queue = [];
+    state.completed = 0;
+
+    fileInput.value = "";
+    previewThumb.src = "";
+    previewThumb.classList.remove("visible");
+
+    document.getElementById("video-grid").innerHTML = "";
+    document.getElementById("gallery-panel").classList.add("hidden");
+    document.getElementById("queue-panel").innerHTML = "";
+    document.getElementById("queue-panel").classList.add("hidden");
+    document.getElementById("log-box").innerHTML = "";
+    document.getElementById("status-panel").classList.add("hidden");
+    showCooldown(0);
+
+    quotaTracker.reset();
+    renderStylesGrid();
+
+    document.getElementById("duration-select").value = "153";
+    document.getElementById("motion-select").value = "kpop_dance";
+    document.getElementById("prompt-mode").value = "random";
+    document.getElementById("manual-prompt-row").classList.add("hidden");
+    Array.from(document.getElementById("manual-prompt").options).forEach(o => o.selected = false);
+
+    updateGenerateBtn();
+    log("🗑️ Application réinitialisée.", "ok");
+    alert("✅ Application réinitialisée avec succès !");
+}
+
+// ==================================================================
+// INIT
+// ==================================================================
+(async function init() {
+    renderStylesGrid();
+    quotaTracker.render();
+
+    const manualSelect = document.getElementById("manual-prompt");
+    RANDOM_ACTIONS.forEach((a, i) => {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = `Action ${i+1} — ${a.slice(0, 60)}…`;
+        manualSelect.appendChild(opt);
+    });
+    RANDOM_LIGHTING.forEach((l, i) => {
+        const opt = document.createElement("option");
+        opt.value = l;
+        opt.textContent = `Lumière ${i+1} — ${l.slice(0, 60)}…`;
+        manualSelect.appendChild(opt);
+    });
+
+    document.getElementById("prompt-mode").addEventListener("change", (e) => {
+        document.getElementById("manual-prompt-row").classList.toggle("hidden", e.target.value !== "manual");
+    });
+
+    log("CinéIA Express — Prêt 🎨", "ok");
+    console.log("CinéIA Express — Prêt 🎨");
+})();
+</script>
+</body>
+</html>
